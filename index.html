@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>90s Anime Studio</title>
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Anime Studio" />
+  <meta name="theme-color" content="#0b0f19" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%234f46e5'/%3E%3Ctext x='50%25' y='56%25' dominant-baseline='middle' text-anchor='middle' font-size='72'%3E%F0%9F%8E%8C%3C/text%3E%3C/svg%3E" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <style>
+    * { font-family: 'Inter', sans-serif; box-sizing: border-box; }
+    body { background: #0b0f19; color: #f3f4f6; margin: 0; padding-bottom: 84px; }
+    .tap-btn { min-height: 48px; touch-action: manipulation; }
+    textarea, input, select { font-size: 16px !important; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Compact Top Progress Bar -->
+  <div id="progressBarWrap" class="hidden fixed top-2 left-1/2 -translate-x-1/2 z-50 w-[94vw] max-w-md bg-gray-900/95 border border-indigo-500/40 rounded-xl px-3 py-2 shadow-2xl backdrop-blur">
+    <div id="progressLabel" class="text-xs font-semibold text-white truncate mb-1.5">⏳ Working...</div>
+    <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
+      <div id="progressFill" class="h-full w-0 bg-gradient-to-r from-indigo-500 to-pink-500 transition-all duration-500"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90vw] bg-gray-800 border border-gray-700 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-xl text-center"></div>
+
+  <div class="max-w-2xl mx-auto px-3 pt-3 space-y-3">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-indigo-950 via-purple-900 to-pink-900 rounded-2xl p-4 shadow-lg border border-white/10">
+      <div class="flex items-center justify-between gap-2">
+        <div>
+          <h1 class="text-lg font-bold text-white leading-tight">🎌 90s Anime Studio</h1>
+          <p class="text-xs text-purple-200/80">Full Gradio Controls · Character Bible · 15-Min Batch · FFmpeg</p>
+        </div>
+        <span id="connBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-800/80 text-gray-300 border border-gray-700 whitespace-nowrap">
+          ⚪ Disconnected
+        </span>
+      </div>
+    </header>
+
+    <!-- Kaggle Link Card -->
+    <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2">
+      <label for="kaggleUrl" class="block text-xs font-semibold text-gray-300">🔗 Paste Kaggle Cloudflare / Gradio Link</label>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input id="kaggleUrl" type="url" placeholder="https://xxxx-xxxx.trycloudflare.com"
+          class="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
+        <button id="connectBtn" type="button"
+          class="tap-btn bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm px-4 rounded-xl transition">
+          🔌 Connect
+        </button>
+      </div>
+      <p id="engineMeta" class="text-[11px] text-gray-400">All characters, prompts, LoRAs, settings &amp; last frame stay saved on this device.</p>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="grid grid-cols-2 gap-1.5 bg-gray-900 p-1 rounded-xl border border-gray-800">
+      <button type="button" data-tab="story" class="tab-btn tap-btn rounded-lg text-xs font-semibold py-2.5 bg-indigo-600 text-white">🎬 Page 1: Studio &amp; Merge</button>
+      <button type="button" data-tab="settings" class="tab-btn tap-btn rounded-lg text-xs font-semibold py-2.5 text-gray-400">⚙️ Page 2: Advanced &amp; Vault</button>
+    </nav>
+
+    <!-- TAB 1: STORY & BATCH -->
+    <div id="tab-story" class="space-y-3">
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-amber-300">🧠 Model Variant (4 Options)</span>
+          <span id="activeVariantBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-300">Kaggle: unknown</span>
+        </div>
+        <div id="variantGroup" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <button type="button" data-variant="pdmd" class="var-btn rounded-xl py-2 px-2 text-xs font-semibold border border-indigo-500 bg-indigo-600/30 text-white">⚡ pdmd (4-step)</button>
+          <button type="button" data-variant="dmad" class="var-btn rounded-xl py-2 px-2 text-xs font-semibold border border-gray-700 bg-gray-950 text-gray-300">⚡ dmad (4-step)</button>
+          <button type="button" data-variant="fused" class="var-btn rounded-xl py-2 px-2 text-xs font-semibold border border-gray-700 bg-gray-950 text-gray-300">🪪 fused (Ref2VA)</button>
+          <button type="button" data-variant="official" class="var-btn rounded-xl py-2 px-2 text-xs font-semibold border border-gray-700 bg-gray-950 text-gray-300">💎 official (8-step)</button>
+        </div>
+        <p class="text-[11px] text-gray-400">pdmd/dmad: Text + First/Last Frame. fused/official: Reference Photos + Voice Clone.</p>
+      </section>
+      <!-- 1-Tap Episode .txt Importer -->
+      <section class="bg-gray-900/90 border border-indigo-500/30 rounded-2xl p-3 space-y-1.5">
+        <div class="flex items-center justify-between gap-2">
+          <label for="episodeFileInput" class="text-xs font-semibold text-amber-300">📂 Load Episode Script (.txt)</label>
+          <span id="episodeLoadedBadge" class="text-[11px] text-gray-400">Auto-fills Characters + All Clips</span>
+        </div>
+        <input id="episodeFileInput" type="file" accept=".txt,text/plain"
+          class="w-full text-xs text-gray-300 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-600 file:text-white hover:file:bg-amber-500" />
+      </section>
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between">
+          <label for="charBible" class="text-xs font-semibold text-indigo-300">🧑 Character Bible (One-Time Definitions)</label>
+          <span class="text-[11px] text-gray-400">Auto-injected per clip</span>
+        </div>
+        <textarea id="charBible" rows="3"
+          placeholder="Arjun: 18yo boy with messy black hair, scar on left cheek, dark blue haori, silver katana&#10;Meera: girl with silver hair, crimson kimono, golden hairpin"
+          class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-sm text-white"></textarea>
+      </section>
+
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label for="batchPrompts" class="block text-xs font-semibold text-pink-300">📝 Multi-Clip Prompts / Upload .txt</label>
+          <label class="cursor-pointer bg-indigo-600/80 hover:bg-indigo-500 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+            📄 Upload .txt
+            <input id="txtFileInput" type="file" accept=".txt,.md" class="hidden" />
+          </label>
+        </div>
+        <textarea id="batchPrompts" rows="6"
+          placeholder="Clip 1 prompt&#10;Action: Arjun runs through neon rain&#10;Dailogs: आज कोई नहीं बचेगा!&#10;Cinematic: low-angle tracking shot, whip pan&#10;Anime: 90s cel-shaded dark fantasy"
+          class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-sm text-white"></textarea>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label for="startFromClip" class="block text-[11px] text-gray-400 mb-1">⏩ Start From Clip #</label>
+            <input id="startFromClip" type="number" min="1" value="1"
+              class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white" />
+          </div>
+          <div>
+            <label for="sceneAtmosphere" class="block text-[11px] text-gray-400 mb-1">🌦️ Scene Time/Weather Lock (Optional)</label>
+            <input id="sceneAtmosphere" type="text" placeholder="e.g., stormy night, warm lantern light"
+              class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white" />
+          </div>
+        </div>
+        <label class="flex items-center gap-2.5 text-xs text-gray-300 py-1 cursor-pointer">
+          <input id="mergeVideo" type="checkbox" class="w-4 h-4 accent-pink-500 rounded" />
+          <span>🎞️ Merge all clips into 1 full MP4 (FFmpeg)</span>
+        </label>
+        <label class="flex items-center gap-2.5 text-xs text-emerald-300 py-1 cursor-pointer">
+          <input id="storyChainLastFrame" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded" />
+          <span>🔗 Auto-chain Last Frame across clips (uncheck for independent scenes)</span>
+        </label>
+      </section>
+
+      <details class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3">
+        <summary class="text-xs font-semibold text-sky-300 cursor-pointer">🧠 Or Auto-Split Story with Gemini</summary>
+        <div class="mt-3 space-y-2">
+          <textarea id="storyPrompt" rows="3" placeholder="Write your full 15-min story idea..."
+            class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-sm text-white"></textarea>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input id="geminiKey" type="password" placeholder="Gemini API Key (AIza...)"
+              class="bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+            <input id="targetMinutes" type="number" min="1" max="30" step="0.5" value="15"
+              class="bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <button id="splitBtn" type="button"
+            class="tap-btn w-full bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm rounded-xl">
+            🧠 Split Story into Shots
+          </button>
+        </div>
+      </details>
+
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2.5">
+        <div class="text-xs font-semibold text-indigo-300">⚡ Quality, Duration &amp; Style</div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div>
+            <label for="resSelect" class="block text-[11px] text-gray-400 mb-1">📐 Resolution</label>
+            <select id="resSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-2.5 py-2 text-xs text-white">
+              <option value="540p (8s T4 sweet spot)" selected>540p (T4 sweet spot)</option>
+              <option value="720p (auto-scales if T4 VRAM tight)">720p (auto-scale)</option>
+              <option value="480p (Fastest · ~35% Lower GPU Load)">480p (Fastest)</option>
+            </select>
+          </div>
+          <div>
+            <label for="durSelect" class="block text-[11px] text-gray-400 mb-1">⏱️ Duration</label>
+            <select id="durSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-2.5 py-2 text-xs text-white">
+              <option value="8 s (192 frames)" selected>8 s (192 frames)</option>
+              <option value="10 s (243 frames)">10 s (243 frames)</option>
+              <option value="5 s (124 frames)">5 s (124 frames)</option>
+              <option value="3 s (73 frames)">3 s (73 frames)</option>
+            </select>
+          </div>
+          <div>
+            <label for="fpsSelect" class="block text-[11px] text-gray-400 mb-1">🎞️ Output FPS</label>
+            <select id="fpsSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-2.5 py-2 text-xs text-white">
+              <option value="24 fps (Native Sharp · Zero Ghosting)" selected>24 fps (Sharp)</option>
+              <option value="48 fps (Smooth Anti-Ghosting)">48 fps (Smooth)</option>
+              <option value="60 fps (Optical Flow · Slow CPU)">60 fps (Slow CPU)</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="videoStyleSelect" class="block text-[11px] text-gray-400 mb-1">🎨 Video Style</label>
+            <select id="videoStyleSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-2.5 py-2 text-xs text-white">
+              <option value="90s / Classic Anime" selected>90s / Classic Anime</option>
+              <option value="Auto (Match Prompt · Anime / Realistic / 3D)">Auto (Match Prompt)</option>
+              <option value="Modern Anime">Modern Anime</option>
+              <option value="Realistic / Live-Action">Realistic / Live-Action</option>
+              <option value="3D CGI / Animated Film">3D CGI / Animated Film</option>
+            </select>
+          </div>
+          <div>
+            <label for="stepsSelect" class="block text-[11px] text-gray-400 mb-1">💎 Steps</label>
+            <select id="stepsSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-2.5 py-2 text-xs text-white">
+              <option value="⚡ Fast - 4 steps" selected>4 steps (2x Fast)</option>
+              <option value="⚖️ Balanced - 6 steps">6 steps (Balanced)</option>
+              <option value="💎 High Quality - 8 steps">8 steps (Max)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button id="startStoryBtn" type="button"
+          class="tap-btn sm:col-span-2 bg-gradient-to-r from-indigo-600 to-pink-600 text-white font-bold text-sm rounded-xl shadow-lg">
+          🚀 Start Story Generation
+        </button>
+        <button id="stopBtn" type="button"
+          class="tap-btn bg-red-600 hover:bg-red-500 text-white font-bold text-sm rounded-xl">
+          🛑 Stop
+        </button>
+      </div>
+
+      <section class="bg-gray-900/90 border border-emerald-800/60 rounded-2xl p-3 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-emerald-300">🎞️ FFmpeg Merge Board (Kaggle Clips)</span>
+          <button type="button" id="refreshMergeClipsBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-gray-800 text-gray-200 hover:bg-gray-700">🔄 Refresh (<span id="kaggleClipCount">0</span>)</button>
+        </div>
+        <div class="flex flex-wrap gap-3 text-xs text-gray-300">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input id="smoothMergeAudio" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded" />
+            <span>🔊 Smooth Audio</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input id="deleteMergedSources" type="checkbox" checked class="w-4 h-4 accent-rose-500 rounded" />
+            <span>🗑️ Delete old clips after merge</span>
+          </label>
+        </div>
+        <button type="button" id="mergeAllClipsBtn" class="w-full tap-btn rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs">🎞️ Merge All Saved Clips &amp; Delete Old Sources</button>
+        <p id="mergeBoardStatus" class="text-[11px] text-gray-400">Sare clips ko ek video me jodkar purane clips delete kar dega.</p>
+      </section>
+    </div>
+
+    <!-- TAB 2: FRAMES, SINGLE CLIP & REFERENCES -->
+    <div id="tab-settings" class="hidden space-y-4">
+      <div class="text-xs font-bold text-indigo-300 uppercase tracking-wider">🔗 Single Clip &amp; References</div>
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-emerald-300">🖼️ Start / Last Frame Continuity</span>
+          <div class="flex gap-1.5">
+            <button id="fetchLastFrameBtn" type="button"
+              class="text-xs bg-gray-800 hover:bg-gray-700 text-emerald-300 px-2.5 py-1.5 rounded-lg border border-gray-700">
+              🔄 Sync
+            </button>
+            <button id="clearLastFrameBtn" type="button"
+              class="text-xs bg-gray-800 hover:bg-red-900/60 text-red-300 px-2.5 py-1.5 rounded-lg border border-gray-700">
+              🗑️ Remove
+            </button>
+          </div>
+        </div>
+        <div class="bg-gray-950 border border-dashed border-gray-700 rounded-xl p-3 flex flex-col items-center justify-center min-h-[130px]">
+          <img id="lastFrameImg" alt="Last frame preview" class="hidden max-h-44 w-auto rounded-lg object-contain" />
+          <p id="lastFrameEmpty" class="text-xs text-gray-500 text-center">No last frame saved yet. Generate a clip or tap Sync.</p>
+        </div>
+        <label class="flex items-center gap-2.5 text-xs text-gray-200 cursor-pointer">
+          <input id="useLastFrame" type="checkbox" checked class="w-4 h-4 accent-emerald-500 rounded" />
+          <span>🔗 Auto-use this Last Frame as Start Frame for next clip</span>
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label for="customStartFile" class="block text-[11px] text-gray-400 mb-1">Custom Start Frame:</label>
+            <input id="customStartFile" type="file" accept="image/*" class="text-xs text-gray-300 w-full" />
+          </div>
+          <div>
+            <label for="endFrameFile" class="block text-[11px] text-gray-400 mb-1">End Frame (optional):</label>
+            <input id="endFrameFile" type="file" accept="image/*" class="text-xs text-gray-300 w-full" />
+          </div>
+        </div>
+      </section>
+
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2">
+        <label for="singlePrompt" class="block text-xs font-semibold text-indigo-300">🎬 Single Shot Scene / Action</label>
+        <textarea id="singlePrompt" rows="3" placeholder="Low-angle shot of Arjun drawing his katana in the rain..."
+          class="w-full bg-gray-950 border border-gray-700 rounded-xl p-2.5 text-sm text-white"></textarea>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <input id="singleDialogue" type="text" placeholder="🗣️ Spoken line"
+            class="sm:col-span-2 bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+          <select id="langSelect" class="bg-gray-950 border border-gray-700 rounded-xl px-2 py-2 text-sm text-white">
+            <option value="Hindi" selected>Hindi</option>
+            <option value="English">English</option>
+            <option value="Japanese">Japanese</option>
+            <option value="Urdu">Urdu</option>
+            <option value="Chinese">Chinese</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Korean">Korean</option>
+            <option value="Arabic">Arabic</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input id="singleSound" type="text" placeholder="🔊 Sound effects / ambience"
+            class="bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+          <input id="singleMusic" type="text" placeholder="🎵 Background music"
+            class="bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+        </div>
+        <button id="startSingleBtn" type="button"
+          class="tap-btn w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-sm rounded-xl">
+          🎬 Generate Single Clip
+        </button>
+      </section>
+
+      <details class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3">
+        <summary class="text-xs font-semibold text-purple-300 cursor-pointer">🧑‍🎤 Reference → Video (requires H3_VARIANT="fused")</summary>
+        <div class="mt-3 space-y-2">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div><label for="ref1File" class="block text-[11px] text-gray-400">Reference 1</label><input id="ref1File" type="file" accept="image/*" class="text-xs text-gray-300 w-full" /></div>
+            <div><label for="ref2File" class="block text-[11px] text-gray-400">Reference 2</label><input id="ref2File" type="file" accept="image/*" class="text-xs text-gray-300 w-full" /></div>
+            <div><label for="ref3File" class="block text-[11px] text-gray-400">Reference 3</label><input id="ref3File" type="file" accept="image/*" class="text-xs text-gray-300 w-full" /></div>
+          </div>
+          <input id="refNames" type="text" placeholder="Who / what is in each reference (comma separated)"
+            class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+        </div>
+      </details>
+
+
+    <!-- TAB 3: LORAS (ALL 9 CATALOG LORAS + CUSTOM URL) -->
+      <div class="text-xs font-bold text-pink-300 uppercase tracking-wider pt-2">🎨 LoRA Adapters</div>
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-3">
+        <div>
+          <label for="lora1Select" class="block text-xs font-semibold text-gray-300 mb-1">🎨 LoRA 1</label>
+          <select id="lora1Select" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white">
+            <option value="None" selected>None</option>
+            <option value="🌸 Anime Motion">🌸 Anime Motion</option>
+            <option value="🎥 Camera Motion">🎥 Camera Motion</option>
+            <option value="⚔️ Weapon Combat (BUNNY)">⚔️ Weapon Combat (BUNNY)</option>
+            <option value="🧱 Spatial &amp; Physics">🧱 Spatial &amp; Physics</option>
+            <option value="🗣️ Natural Face &amp; Speech">🗣️ Natural Face &amp; Speech</option>
+            <option value="🧑 Realism People (fal)">🧑 Realism People (fal)</option>
+            <option value="🔄 360° Orbit (same image as first + last frame)">🔄 360° Orbit</option>
+            <option value="🎞️ Studio 1939 Animation">🎞️ Studio 1939 Animation</option>
+            <option value="📼 VHS Tape (1980s)">📼 VHS Tape (1980s)</option>
+          </select>
+          <div class="flex items-center justify-between text-xs text-gray-400 mt-1.5">
+            <span>Strength 1: <strong id="s1Val" class="text-white">1.0</strong></span>
+            <input id="s1Range" type="range" min="0" max="1.5" step="0.05" value="1.0" class="w-2/3 accent-indigo-500" />
+          </div>
+        </div>
+
+        <div>
+          <label for="lora2Select" class="block text-xs font-semibold text-gray-300 mb-1">🎨 LoRA 2</label>
+          <select id="lora2Select" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white">
+            <option value="None" selected>None</option>
+            <option value="🌸 Anime Motion">🌸 Anime Motion</option>
+            <option value="🎥 Camera Motion">🎥 Camera Motion</option>
+            <option value="⚔️ Weapon Combat (BUNNY)">⚔️ Weapon Combat (BUNNY)</option>
+            <option value="🧱 Spatial &amp; Physics">🧱 Spatial &amp; Physics</option>
+            <option value="🗣️ Natural Face &amp; Speech">🗣️ Natural Face &amp; Speech</option>
+            <option value="🧑 Realism People (fal)">🧑 Realism People (fal)</option>
+            <option value="🔄 360° Orbit (same image as first + last frame)">🔄 360° Orbit</option>
+            <option value="🎞️ Studio 1939 Animation">🎞️ Studio 1939 Animation</option>
+            <option value="📼 VHS Tape (1980s)">📼 VHS Tape (1980s)</option>
+          </select>
+          <div class="flex items-center justify-between text-xs text-gray-400 mt-1.5">
+            <span>Strength 2: <strong id="s2Val" class="text-white">1.0</strong></span>
+            <input id="s2Range" type="range" min="0" max="1.5" step="0.05" value="1.0" class="w-2/3 accent-indigo-500" />
+          </div>
+        </div>
+
+        <div>
+          <label for="customLoraUrl" class="block text-xs font-semibold text-gray-300 mb-1">Custom LoRA URL (.safetensors)</label>
+          <input id="customLoraUrl" type="url" placeholder="https://huggingface.co/user/repo/resolve/main/lora.safetensors"
+            class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+          <div class="flex items-center justify-between text-xs text-gray-400 mt-1.5">
+            <span>Custom Strength: <strong id="s3Val" class="text-white">1.0</strong></span>
+            <input id="s3Range" type="range" min="0" max="1.5" step="0.05" value="1.0" class="w-2/3 accent-indigo-500" />
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2.5 text-xs text-gray-300 cursor-pointer">
+          <input id="autoTrigger" type="checkbox" checked class="w-4 h-4 accent-indigo-500 rounded" />
+          <span>Automatically add each LoRA's trigger words</span>
+        </label>
+      </section>
+
+
+    <!-- TAB 4: QUALITY, FPS & ADVANCED -->
+      <div class="text-xs font-bold text-sky-300 uppercase tracking-wider pt-2">⚙️ Continuity, Face Lock &amp; Advanced</div>
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          
+          <div>
+            <label for="aspectSelect" class="block text-xs font-semibold text-gray-300 mb-1">📏 Aspect Ratio</label>
+            <select id="aspectSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white">
+              <option value="16:9 Landscape" selected>16:9 Landscape</option>
+              <option value="Auto (match image)">Auto (match image)</option>
+              <option value="9:16 Portrait">9:16 Portrait</option>
+              <option value="1:1 Square">1:1 Square</option>
+              <option value="4:3 Classic">4:3 Classic</option>
+              <option value="3:4 Portrait">3:4 Portrait</option>
+              <option value="21:9 Cinema">21:9 Cinema</option>
+            </select>
+          </div>
+        </div>
+
+        
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          
+          <div>
+            <label for="continuitySelect" class="block text-xs font-semibold text-gray-300 mb-1">🔗 AI Continuity</label>
+            <select id="continuitySelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white">
+              <option value="Smart AI Continuity (Auto Cut on Scene Shift · Keep Frame on Same Scene)" selected>Smart AI Continuity (Auto Cut)</option>
+              <option value="Always Chain">Always Chain</option>
+              <option value="Always Fresh Cut">Always Fresh Cut</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label for="faceCheckSelect" class="block text-xs font-semibold text-gray-300 mb-1">🪪 Face Lock</label>
+            <select id="faceCheckSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white">
+              <option value="AI Face Lock + Auto-Retry on Drift" selected>AI Face Lock + Auto-Retry</option>
+              <option value="Face Check Only">Face Check Only</option>
+              <option value="Off">Off</option>
+            </select>
+          </div>
+          <div>
+            <label for="aiKeyInput" class="block text-xs font-semibold text-gray-300 mb-1">🔑 Free AI Key (Optional)</label>
+            <input id="aiKeyInput" type="password" placeholder="AIza... / gsk_... / sk-or-..."
+              class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white" />
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2.5 text-xs text-gray-300 py-1 cursor-pointer">
+          <input id="cpuSharpen" type="checkbox" checked class="w-4 h-4 accent-indigo-500 rounded" />
+          <span>✨ CPU Crisp Sharpen (0 GPU load)</span>
+        </label>
+
+        <div class="grid grid-cols-2 gap-2">
+          
+          <div>
+            <label for="samplerSelect" class="block text-xs font-semibold text-gray-300 mb-1">⚙️ Sampler</label>
+            <select id="samplerSelect" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-white">
+              <option value="euler" selected>euler</option>
+              <option value="res_multistep">res_multistep</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="customStepsInput" class="block text-xs font-semibold text-gray-300 mb-1">Custom Steps (0 = preset)</label>
+            <input id="customStepsInput" type="number" min="0" max="12" value="0"
+              class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label for="seedInput" class="block text-xs font-semibold text-gray-300 mb-1">🎲 Seed (-1 = random)</label>
+            <input id="seedInput" type="number" value="-1"
+              class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white" />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between text-xs text-gray-300 mb-1">
+            <span>Flow Shift (video)</span>
+            <strong id="shiftVal" class="text-white">12.0</strong>
+          </div>
+          <input id="shiftRange" type="range" min="1" max="16" step="0.5" value="12" class="w-full accent-indigo-500" />
+        </div>
+      </section>
+
+
+    <!-- TAB 5: SAVED VIDEOS VAULT (IndexedDB) -->
+      <div class="text-xs font-bold text-emerald-300 uppercase tracking-wider pt-2">📥 Saved Videos Vault</div>
+      <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-pink-300">🎞️ Generated Videos Vault (Saved in App)</span>
+          <button id="clearAllVideosBtn" type="button" class="text-[11px] text-red-300 hover:text-red-200">🗑️ Clear All</button>
+        </div>
+        <p class="text-[11px] text-gray-400">Videos generated in this app stay saved here so you can watch or re-download them anytime, even after Kaggle clears its disk.</p>
+        <div id="videosList" class="space-y-3">
+          <p class="text-xs text-gray-500 text-center py-6">No videos saved yet. Generate a clip to see it here.</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Live Status & Saved History -->
+    <section class="bg-gray-900/90 border border-gray-800 rounded-2xl p-3 space-y-2">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-semibold text-gray-300">📜 Live Status &amp; Saved History</span>
+        <button id="clearHistoryBtn" type="button" class="text-[11px] text-gray-400 hover:text-white">Clear Log</button>
+      </div>
+      <div id="statusLog" class="bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-xs text-gray-300 max-h-40 overflow-y-auto whitespace-pre-wrap">Ready. Paste your Kaggle link above and tap Connect.</div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      var STORE_KEY = "anime_studio_v2";
+      var downloaded = new Set();
+      var pollTimer = null;
+      var customStartB64 = "";
+      var endFrameB64 = "";
+      var refB64 = ["", "", ""];
+      var lastSyncedClip = "";
+
+      function $(id) { return document.getElementById(id); }
+
+      function showToast(msg) {
+        var t = $("toast");
+        t.textContent = msg;
+        t.classList.remove("hidden");
+        setTimeout(function () { t.classList.add("hidden"); }, 3200);
+      }
+
+      function loadState() {
+        try {
+          var raw = localStorage.getItem(STORE_KEY);
+          return raw ? JSON.parse(raw) : {};
+        } catch (e) { return {}; }
+      }
+
+      function saveState(patch) {
+        try {
+          var next = Object.assign({}, loadState(), patch);
+          localStorage.setItem(STORE_KEY, JSON.stringify(next));
+        } catch (e) {}
+      }
+
+      function getBaseUrl() {
+        return ($("kaggleUrl").value || "").trim().replace(/\/+$/, "");
+      }
+
+      function renderLastFrame(b64) {
+        if (b64) {
+          $("lastFrameImg").src = b64;
+          $("lastFrameImg").classList.remove("hidden");
+          $("lastFrameEmpty").classList.add("hidden");
+        } else {
+          $("lastFrameImg").classList.add("hidden");
+          $("lastFrameEmpty").classList.remove("hidden");
+        }
+      }
+
+      var textIds = [
+        "kaggleUrl", "charBible", "batchPrompts", "storyPrompt", "geminiKey", "targetMinutes",
+        "singlePrompt", "singleDialogue", "langSelect", "singleSound", "singleMusic", "refNames",
+        "lora1Select", "s1Range", "lora2Select", "s2Range", "customLoraUrl", "s3Range",
+        "resSelect", "aspectSelect", "durSelect", "fpsSelect", "stepsSelect", "samplerSelect",
+        "customStepsInput", "seedInput", "shiftRange"
+      ];
+
+      function syncSliderLabels() {
+        $("s1Val").textContent = $("s1Range").value;
+        $("s2Val").textContent = $("s2Range").value;
+        $("s3Val").textContent = $("s3Range").value;
+        $("shiftVal").textContent = $("shiftRange").value;
+      }
+
+      function restoreUI() {
+        var s = loadState();
+        textIds.forEach(function (id) {
+          if (s[id] !== undefined) $(id).value = s[id];
+        });
+        if (typeof s.mergeVideo === "boolean") $("mergeVideo").checked = s.mergeVideo;
+        if (typeof s.useLastFrame === "boolean") {
+          $("useLastFrame").checked = s.useLastFrame;
+          $("storyChainLastFrame").checked = s.useLastFrame;
+        }
+        if (typeof s.autoTrigger === "boolean") $("autoTrigger").checked = s.autoTrigger;
+        if (s.lastSyncedClip) lastSyncedClip = s.lastSyncedClip;
+        if (s.lastFrameB64) renderLastFrame(s.lastFrameB64);
+        if (s.statusLog) $("statusLog").textContent = s.statusLog;
+        syncSliderLabels();
+      }
+
+      textIds.forEach(function (id) {
+        $(id).addEventListener("input", function () {
+          var o = {}; o[id] = $(id).value; saveState(o); syncSliderLabels();
+        });
+        $(id).addEventListener("change", function () {
+          var o = {}; o[id] = $(id).value; saveState(o); syncSliderLabels();
+        });
+      });
+      ["mergeVideo", "useLastFrame", "autoTrigger"].forEach(function (id) {
+        $(id).addEventListener("change", function () {
+          var o = {}; o[id] = $(id).checked; saveState(o);
+        });
+      });
+
+      document.querySelectorAll(".tab-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var target = btn.getAttribute("data-tab");
+          ["story", "continuity", "loras", "settings", "videos"].forEach(function (name) {
+            $("tab-" + name).classList.toggle("hidden", name !== target);
+          });
+          document.querySelectorAll(".tab-btn").forEach(function (b) {
+            var active = b.getAttribute("data-tab") === target;
+            b.className = "tab-btn tap-btn rounded-lg text-xs font-semibold py-2 " +
+              (active ? "bg-indigo-600 text-white" : "text-gray-400");
+          });
+        });
+      });
+
+      function bindFileB64(inputId, cb) {
+        $(inputId).addEventListener("change", function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (!f) return;
+          var r = new FileReader();
+          r.onload = function () { cb(r.result); };
+          r.readAsDataURL(f);
+        });
+      }
+      bindFileB64("customStartFile", function (b64) {
+        customStartB64 = b64;
+        renderLastFrame(b64);
+        saveState({ lastFrameB64: b64 });
+        showToast("Start frame loaded & saved!");
+      });
+      bindFileB64("endFrameFile", function (b64) { endFrameB64 = b64; showToast("End frame loaded!"); });
+      bindFileB64("ref1File", function (b64) { refB64[0] = b64; showToast("Reference 1 loaded!"); });
+      bindFileB64("ref2File", function (b64) { refB64[1] = b64; showToast("Reference 2 loaded!"); });
+      bindFileB64("ref3File", function (b64) { refB64[2] = b64; showToast("Reference 3 loaded!"); });
+
+      var DB_NAME = "AnimeStudioVault";
+      var DB_STORE = "videos";
+
+      function openVault() {
+        return new Promise(function (resolve, reject) {
+          try {
+            var req = indexedDB.open(DB_NAME, 1);
+            req.onupgradeneeded = function (e) {
+              var db = e.target.result;
+              if (!db.objectStoreNames.contains(DB_STORE)) {
+                db.createObjectStore(DB_STORE, { keyPath: "id" });
+              }
+            };
+            req.onsuccess = function (e) { resolve(e.target.result); };
+            req.onerror = function (e) { reject(e.target.error); };
+          } catch (err) { reject(err); }
+        });
+      }
+
+      async function saveVideoToVault(fname, blob) {
+        try {
+          var db = await openVault();
+          var tx = db.transaction(DB_STORE, "readwrite");
+          tx.objectStore(DB_STORE).put({
+            id: fname + "_" + Date.now(),
+            name: fname,
+            sizeMB: (blob.size / (1024 * 1024)).toFixed(2),
+            createdAt: new Date().toLocaleTimeString(),
+            blob: blob
+          });
+          tx.oncomplete = function () { renderVault(); };
+        } catch (e) {}
+      }
+
+      async function renderVault() {
+        var box = $("videosList");
+        try {
+          var db = await openVault();
+          var tx = db.transaction(DB_STORE, "readonly");
+          var req = tx.objectStore(DB_STORE).getAll();
+          req.onsuccess = function () {
+            var items = (req.result || []).reverse();
+            if (!items.length) {
+              box.innerHTML = '<p class="text-xs text-gray-500 text-center py-6">No videos saved yet. Generate a clip to see it here.</p>';
+              return;
+            }
+            box.innerHTML = "";
+            items.forEach(function (item) {
+              var url = URL.createObjectURL(item.blob);
+              var card = document.createElement("div");
+              card.className = "bg-gray-950 border border-gray-800 rounded-xl p-2.5 space-y-2";
+              card.innerHTML =
+                '<div class="flex items-center justify-between text-xs">' +
+                  '<span class="font-semibold text-white truncate">' + item.name + '</span>' +
+                  '<span class="text-gray-400 text-[11px]">' + item.sizeMB + ' MB · ' + item.createdAt + '</span>' +
+                '</div>' +
+                '<video controls playsinline class="w-full rounded-lg bg-black max-h-56" src="' + url + '"></video>' +
+                '<div class="grid grid-cols-2 gap-2">' +
+                  '<a href="' + url + '" download="' + item.name + '" class="tap-btn flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">⬇️ Save MP4</a>' +
+                  '<button type="button" data-del="' + item.id + '" class="del-vid-btn tap-btn bg-gray-800 hover:bg-red-900/60 text-red-300 text-xs font-semibold rounded-lg">🗑️ Delete</button>' +
+                '</div>';
+              box.appendChild(card);
+            });
+            box.querySelectorAll(".del-vid-btn").forEach(function (b) {
+              b.addEventListener("click", async function () {
+                var id = b.getAttribute("data-del");
+                var db2 = await openVault();
+                var tx2 = db2.transaction(DB_STORE, "readwrite");
+                tx2.objectStore(DB_STORE).delete(id);
+                tx2.oncomplete = function () { renderVault(); };
+              });
+            });
+          };
+        } catch (e) {
+          box.innerHTML = '<p class="text-xs text-gray-500 text-center py-4">Video vault unavailable in this browser.</p>';
+        }
+      }
+
+      $("clearAllVideosBtn").addEventListener("click", async function () {
+        try {
+          var db = await openVault();
+          var tx = db.transaction(DB_STORE, "readwrite");
+          tx.objectStore(DB_STORE).clear();
+          tx.oncomplete = function () { renderVault(); showToast("Cleared all saved videos."); };
+        } catch (e) {}
+      });
+
+      async function triggerDownload(base, fname) {
+        if (!fname || downloaded.has(fname)) return;
+        downloaded.add(fname);
+        var dlUrl = base + "/download_clip/" + encodeURIComponent(fname) + "?t=" + Date.now();
+        try {
+          var res = await fetch(dlUrl, { cache: "no-store" });
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          var blob = await res.blob();
+          await saveVideoToVault(fname, blob);
+          var objUrl = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = objUrl;
+          a.download = fname;
+          a.style.display = "none";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function () {
+            if (a.parentNode) a.parentNode.removeChild(a);
+            URL.revokeObjectURL(objUrl);
+          }, 2000);
+          showToast("Saved " + fname + " to App Vault & Downloads!");
+        } catch (e) {
+          var a2 = document.createElement("a");
+          a2.href = dlUrl;
+          a2.download = fname;
+          a2.style.display = "none";
+          document.body.appendChild(a2);
+          a2.click();
+          setTimeout(function () { if (a2.parentNode) a2.parentNode.removeChild(a2); }, 1000);
+        }
+      }
+
+      async function syncLastFrame(base, silent) {
+        try {
+          var res = await fetch(base + "/api/last_frame?t=" + Date.now(), { cache: "no-store" });
+          if (!res.ok) {
+            if (!silent) showToast("No last frame on Kaggle yet.");
+            return;
+          }
+          var blob = await res.blob();
+          var reader = new FileReader();
+          reader.onload = function () {
+            saveState({ lastFrameB64: reader.result });
+            renderLastFrame(reader.result);
+            if (!silent) showToast("Last frame synced & saved!");
+          };
+          reader.readAsDataURL(blob);
+        } catch (e) {
+          if (!silent) showToast("Could not reach Kaggle for last frame.");
+        }
+      }
+
+      async function pollStatus() {
+        var base = getBaseUrl();
+        if (!base || !base.startsWith("https://")) return;
+        try {
+          var r = await fetch(base + "/api/status?t=" + Date.now(), { cache: "no-store" });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          var d = await r.json();
+          $("connBadge").textContent = "🟢 Connected";
+          $("connBadge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700 whitespace-nowrap";
+
+          var p = d.progress || {};
+          if (Array.isArray(p.completed_clips)) {
+            p.completed_clips.forEach(function (fn) { triggerDownload(base, fn); });
+          }
+          if (d.has_last_frame && Array.isArray(p.completed_clips) && p.completed_clips.length > 0) {
+            var latestClip = p.completed_clips[p.completed_clips.length - 1];
+            if (latestClip !== lastSyncedClip) {
+              lastSyncedClip = latestClip;
+              saveState({ lastSyncedClip: latestClip });
+              syncLastFrame(base, true);
+            }
+          }
+          if (p.active) {
+            $("progressBarWrap").classList.remove("hidden");
+            $("progressFill").style.width = Math.round((p.fraction || 0) * 100) + "%";
+            var prefix = (p.clip_total && p.clip_total > 1) ? ("[" + p.clip_index + "/" + p.clip_total + "] ") : "";
+            $("progressLabel").textContent = "⏳ " + prefix + (p.text || "Working...") + " · " + Math.round(p.elapsed || 0) + "s";
+            $("statusLog").textContent = $("progressLabel").textContent;
+          } else {
+            $("progressBarWrap").classList.add("hidden");
+            if (d.status_text) {
+              $("statusLog").textContent = d.status_text;
+              saveState({ statusLog: d.status_text });
+            }
+          }
+        } catch (e) {
+          $("connBadge").textContent = "🔴 Offline";
+          $("connBadge").className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-red-950 text-red-300 border border-red-800 whitespace-nowrap";
+        }
+      }
+
+      function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollStatus();
+        pollTimer = setInterval(pollStatus, 2500);
+      }
+
+      $("connectBtn").addEventListener("click", function () {
+        var base = getBaseUrl();
+        if (!base.startsWith("https://")) { showToast("Paste a valid https:// Kaggle link first."); return; }
+        saveState({ kaggleUrl: base });
+        showToast("Connecting to Kaggle...");
+        startPolling();
+      });
+
+      $("fetchLastFrameBtn").addEventListener("click", function () {
+        var base = getBaseUrl();
+        if (!base) { showToast("Connect Kaggle link first."); return; }
+        syncLastFrame(base, false);
+      });
+
+      $("clearLastFrameBtn").addEventListener("click", async function () {
+        customStartB64 = "";
+        endFrameB64 = "";
+        if ($("customStartFile")) $("customStartFile").value = "";
+        if ($("endFrameFile")) $("endFrameFile").value = "";
+        saveState({ lastFrameB64: "", lastSyncedClip: lastSyncedClip });
+        renderLastFrame("");
+        var base = getBaseUrl();
+        if (base) {
+          try { await fetch(base + "/api/clear_last_frame", { method: "POST" }); } catch (e) {}
+        }
+        showToast("Start / Last frame cleared!");
+      });
+
+      $("storyChainLastFrame").addEventListener("change", function () {
+        $("useLastFrame").checked = $("storyChainLastFrame").checked;
+        saveState({ useLastFrame: $("useLastFrame").checked });
+      });
+      $("useLastFrame").addEventListener("change", function () {
+        $("storyChainLastFrame").checked = $("useLastFrame").checked;
+      });
+
+      function commonOptions() {
+        return {
+          resolution: $("resSelect").value,
+          aspect: $("aspectSelect").value,
+          duration: $("durSelect").value,
+          fps_choice: $("fpsSelect").value,
+          steps: $("stepsSelect").value,
+          sampler: $("samplerSelect").value,
+          custom_steps: parseInt($("customStepsInput").value || "0", 10),
+          seed: parseInt($("seedInput").value || "-1", 10),
+          shift: parseFloat($("shiftRange").value || "12.0"),
+          lora1: $("lora1Select").value,
+          s1: parseFloat($("s1Range").value || "1.0"),
+          lora2: $("lora2Select").value,
+          s2: parseFloat($("s2Range").value || "1.0"),
+          custom_url: $("customLoraUrl").value,
+          s3: parseFloat($("s3Range").value || "1.0"),
+          auto_trigger: $("autoTrigger").checked,
+          video_style: $("videoStyleSelect").value,
+          continuity_mode: $("continuitySelect").value,
+          face_check_mode: $("faceCheckSelect").value,
+          ai_key: $("aiKeyInput").value,
+          cpu_sharpen: $("cpuSharpen").checked
+        };
+      }
+
+      $("txtFileInput").addEventListener("change", function (ev) {
+        var file = ev.target.files && ev.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var raw = String(reader.result || "").replace(/\r\n/g, "\n");
+          var m = raw.search(/^\s*clip\s*\d+/im);
+          if (m < 0) {
+            $("batchPrompts").value = raw;
+            showToast("Prompts loaded.");
+            return;
+          }
+          var pre = raw.slice(0, m), clips = raw.slice(m);
+          var bibleLines = [];
+          pre.split("\n").forEach(function (ln) {
+            var st = ln.trim();
+            if (/^[^:]{1,40}:\s*\S/.test(st) && !/^---/.test(st) && !/^NOTE:/i.test(st)) {
+              bibleLines.push(st);
+            }
+          });
+          if (bibleLines.length) $("charBible").value = bibleLines.join("\n");
+          $("batchPrompts").value = clips;
+          showToast("Loaded .txt (" + bibleLines.length + " chars + clips)!");
+        };
+        reader.readAsText(file);
+      });
+
+      $("splitBtn").addEventListener("click", async function () {
+        var base = getBaseUrl();
+        if (!base) { showToast("Connect Kaggle link first."); return; }
+        try {
+          showToast("Splitting story with Gemini...");
+          var r = await fetch(base + "/api/split_story", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              story_prompt: $("storyPrompt").value,
+              api_key: $("geminiKey").value,
+              target_minutes: parseFloat($("targetMinutes").value || "15"),
+              character_bible: $("charBible").value,
+              duration: $("durSelect").value
+            })
+          });
+          var d = await r.json();
+          if (!d.ok) throw new Error(d.error || "Split failed");
+          var txt = d.shots.map(function (s, i) {
+            return "Clip " + (i + 1) + " prompt\nAction: " + s.scene_action +
+              "\nDailogs: " + (s.dialogue || "") +
+              "\nSound: " + (s.sound_effects || "") +
+              "\nMusic: " + (s.background_music || "");
+          }).join("\n\n");
+          $("batchPrompts").value = txt;
+          saveState({ batchPrompts: txt });
+          showToast("Split into " + d.shots.length + " clips!");
+        } catch (e) { showToast("Error: " + e.message); }
+      });
+
+      $("startStoryBtn").addEventListener("click", async function () {
+        var base = getBaseUrl();
+        if (!base) { showToast("Connect Kaggle link first."); return; }
+        var s = loadState();
+        var startB64 = customStartB64 || ($("useLastFrame").checked ? (s.lastFrameB64 || "") : "");
+        try {
+          var payload = Object.assign({
+            character_bible: $("charBible").value,
+            batch_prompts: $("batchPrompts").value,
+            story_prompt: $("storyPrompt").value,
+            api_key: $("geminiKey").value,
+            target_minutes: parseFloat($("targetMinutes").value || "15"),
+            merge_final_video: $("mergeVideo").checked,
+            use_last_frame: $("useLastFrame").checked,
+            start_img_b64: startB64,
+            start_from_clip: parseInt($("startFromClip").value || "1", 10),
+            scene_atmosphere: $("sceneAtmosphere").value
+          }, commonOptions());
+          var r = await fetch(base + "/api/generate_story", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          var d = await r.json();
+          if (!d.ok) throw new Error(d.error || "Failed to start");
+          showToast("Story generation started!");
+          startPolling();
+        } catch (e) { showToast("Error: " + e.message); }
+      });
+
+      $("startSingleBtn").addEventListener("click", async function () {
+        var base = getBaseUrl();
+        if (!base) { showToast("Connect Kaggle link first."); return; }
+        var s = loadState();
+        var startB64 = customStartB64 || ($("useLastFrame").checked ? (s.lastFrameB64 || "") : "");
+        try {
+          var payload = Object.assign({
+            character_bible: $("charBible").value,
+            prompt: $("singlePrompt").value,
+            dialogue: $("singleDialogue").value,
+            language: $("langSelect").value,
+            sound: $("singleSound").value,
+            music: $("singleMusic").value,
+            use_last_frame: $("useLastFrame").checked,
+            start_img_b64: startB64,
+            end_img_b64: endFrameB64,
+            ref1_b64: refB64[0],
+            ref2_b64: refB64[1],
+            ref3_b64: refB64[2],
+            ref_names: $("refNames").value
+          }, commonOptions());
+          var r = await fetch(base + "/api/generate_single", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          var d = await r.json();
+          if (!d.ok) throw new Error(d.error || "Failed to start");
+          showToast("Single clip started!");
+          startPolling();
+        } catch (e) { showToast("Error: " + e.message); }
+      });
+
+      $("stopBtn").addEventListener("click", async function () {
+        var base = getBaseUrl();
+        if (!base) return;
+        try {
+          await fetch(base + "/api/stop", { method: "POST" });
+          showToast("Stopping after current step...");
+        } catch (e) { showToast("Stop request failed."); }
+      });
+
+      $("episodeFileInput").addEventListener("change", function (e) {
+        var file = e.target.files && e.target.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var txt = String(reader.result || "");
+          var charText = "";
+          var clipsText = txt;
+          var mChar = txt.match(/--- STEP A:[^\n]*---\s*\n([\s\S]*?)\n--- STEP B:/);
+          if (mChar && mChar[1]) {
+            charText = mChar[1].trim();
+            $("charBible").value = charText;
+            saveState({ charBible: charText });
+          }
+          var mStepB = txt.match(/--- STEP B:[^\n]*---\s*\n([\s\S]*)$/);
+          if (mStepB && mStepB[1]) {
+            clipsText = mStepB[1].trim();
+          } else {
+            var idx = txt.search(/^Clip\s+1\b/im);
+            if (idx >= 0) clipsText = txt.slice(idx).trim();
+          }
+          $("batchPrompts").value = clipsText;
+          saveState({ batchPrompts: clipsText });
+          var count = (clipsText.match(/^Clip\s+\d+/gim) || []).length;
+          downloaded.clear();
+          $("statusLog").textContent = "✅ Loaded " + count + " clips. Ready to start.";
+          saveState({ statusLog: $("statusLog").textContent });
+          $("episodeLoadedBadge").textContent = "✅ " + count + " clips loaded";
+          showToast("Loaded " + count + " clips" + (charText ? " + Character Bible!" : "!"));
+        };
+        reader.readAsText(file);
+      });
+
+      $("clearHistoryBtn").addEventListener("click", function () {
+        $("statusLog").textContent = "Cleared.";
+        saveState({ statusLog: "Cleared." });
+      });
+
+      document.querySelectorAll(".var-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var v = btn.dataset.variant;
+          document.querySelectorAll(".var-btn").forEach(function (b) {
+            var on = b.dataset.variant === v;
+            b.classList.toggle("border-indigo-500", on);
+            b.classList.toggle("bg-indigo-600/30", on);
+            b.classList.toggle("text-white", on);
+            b.classList.toggle("border-gray-700", !on);
+            b.classList.toggle("bg-gray-950", !on);
+            b.classList.toggle("text-gray-300", !on);
+          });
+          if (v === "official") $("stepsSelect").value = "💎 High Quality - 8 steps";
+          else $("stepsSelect").value = "⚡ Fast - 4 steps";
+          if (v === "official" || v === "fused") $("samplerSelect").value = "res_multistep";
+          else $("samplerSelect").value = "euler";
+          saveState({ selectedVariant: v });
+        });
+      });
+
+      async function refreshKaggleClipCount() {
+        var base = getBaseUrl();
+        if (!base) return;
+        try {
+          var r = await fetch(base + "/api/list_clips?t=" + Date.now(), { cache: "no-store" });
+          var d = await r.json();
+          if (d.ok) $("kaggleClipCount").textContent = String(d.count || 0);
+        } catch (e) {}
+      }
+      $("refreshMergeClipsBtn").addEventListener("click", refreshKaggleClipCount);
+
+      $("mergeAllClipsBtn").addEventListener("click", async function () {
+        var base = getBaseUrl();
+        if (!base) { showToast("Connect Kaggle link first."); return; }
+        $("mergeBoardStatus").textContent = "⏳ Merging all clips with FFmpeg...";
+        try {
+          var r = await fetch(base + "/api/merge_clips", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              smooth_audio: $("smoothMergeAudio").checked,
+              delete_sources: $("deleteMergedSources").checked
+            })
+          });
+          var d = await r.json();
+          if (!d.ok) throw new Error(d.error || "Merge failed");
+          $("mergeBoardStatus").textContent = "✅ Merged " + d.merged_count + " clips -> " + d.merged_file + (d.deleted_count ? (" (" + d.deleted_count + " purane clips deleted)") : "");
+          showToast("Merged " + d.merged_count + " clips! Downloading...");
+          refreshKaggleClipCount();
+          startPolling();
+        } catch (e) {
+          $("mergeBoardStatus").textContent = "❌ " + e.message;
+          showToast("Merge error: " + e.message);
+        }
+      });
+
+      restoreUI();
+      renderVault();
+      if (getBaseUrl().startsWith("https://")) startPolling();
+    })();
+  </script>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
